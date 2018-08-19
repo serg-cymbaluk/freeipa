@@ -48,5 +48,5 @@ jobs:
         build_url: '{fedora-28/build_url}'
         test_suite: test_webui/
         template: *ci-master-f28
-        timeout: 19600
+        timeout: 36000
         topology: *ipaserver
