@@ -64,8 +64,7 @@ class vault_tasks(UI_driver):
 @pytest.mark.tier1
 class test_vault(vault_tasks):
 
-    def setup(self, *args, **kwargs):
-        super(test_vault, self).setup(*args, **kwargs)
+    def setup(self):
         if not self.has_kra():
             self.skip('KRA not configured')
 

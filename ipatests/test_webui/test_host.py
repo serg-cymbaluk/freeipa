@@ -48,8 +48,7 @@ ENTITY = 'host'
 @pytest.mark.tier1
 class host_tasks(UI_driver):
 
-    def setup(self, *args, **kwargs):
-        super(host_tasks, self).setup(*args, **kwargs)
+    def setup(self):
         self.prep_data()
         self.prep_data2()
         self.prep_data3()

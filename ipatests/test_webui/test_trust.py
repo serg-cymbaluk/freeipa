@@ -98,8 +98,7 @@ class trust_tasks(UI_driver):
 @pytest.mark.tier1
 class test_trust(trust_tasks):
 
-    def setup(self, *args, **kwargs):
-        super(test_trust, self).setup(*args, **kwargs)
+    def setup(self):
         if not self.has_trusts():
             self.skip('Trusts not configured')
 

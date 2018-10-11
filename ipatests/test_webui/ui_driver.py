@@ -30,10 +30,9 @@ import re
 import os
 from functools import wraps
 import unittest
-from urllib.error import URLError
 
 import paramiko
-
+import pytest
 
 try:
     from selenium import webdriver
@@ -42,50 +41,12 @@ try:
     from selenium.common.exceptions import StaleElementReferenceException
     from selenium.common.exceptions import WebDriverException
     from selenium.common.exceptions import ElementClickInterceptedException
-    from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
     from selenium.webdriver.common.keys import Keys
     from selenium.webdriver.common.by import By
-    from selenium.webdriver.chrome.options import Options as ChromeOptions
     from selenium.webdriver.support.wait import WebDriverWait
     from selenium.webdriver.support.ui import Select
-    NO_SELENIUM = False
 except ImportError:
-    NO_SELENIUM = True
-try:
-    import yaml
-    NO_YAML = False
-except ImportError:
-    NO_YAML = True
-from ipaplatform.paths import paths
-
-ENV_MAP = {
-    'MASTER': 'ipa_server',
-    'ADMINID': 'ipa_admin',
-    'ADMINPW': 'ipa_password',
-    'DOMAIN': 'ipa_domain',
-    'IPA_REALM': 'ipa_realm',
-    'IPA_IP': 'ipa_ip',
-    'IPA_NO_CA': 'no_ca',
-    'IPA_NO_DNS': 'no_dns',
-    'IPA_HAS_TRUSTS': 'has_trusts',
-    'IPA_HAS_KRA': 'has_kra',
-    'IPA_HOST_CSR_PATH': 'host_csr_path',
-    'IPA_SERVICE_CSR_PATH': 'service_csr_path',
-    'AD_DOMAIN': 'ad_domain',
-    'AD_DC': 'ad_dc',
-    'AD_ADMIN': 'ad_admin',
-    'AD_PASSWORD': 'ad_password',
-    'AD_DC_IP': 'ad_dc_ip',
-    'TRUST_SECRET': 'trust_secret',
-    'SEL_TYPE': 'type',
-    'SEL_BROWSER': 'browser',
-    'SEL_HOST': 'host',
-    'FF_PROFILE': 'ff_profile',
-}
-
-DEFAULT_BROWSER = 'firefox'
-DEFAULT_PORT = 4444
-DEFAULT_TYPE = 'local'
+    pass
 
 
 def screenshot(fn):
@@ -94,9 +55,9 @@ def screenshot(fn):
     Should be applied on methods of UI_driver subclasses
     """
     @wraps(fn)
-    def screenshot_wrapper(*args):
+    def screenshot_wrapper(*args, **kwargs):
         try:
-            return fn(*args)
+            return fn(*args, **kwargs)
         except unittest.SkipTest:
             raise
         except Exception:
@@ -111,129 +72,12 @@ def screenshot(fn):
     return screenshot_wrapper
 
 
-class UI_driver:
+class UIUtils:
     """
-    Base class for all UI integration tests
+    Utils for UI testing
     """
 
     request_timeout = 60
-
-    @classmethod
-    def setup_class(cls):
-        if NO_SELENIUM:
-            raise unittest.SkipTest('Selenium not installed')
-        cls.load_config()
-
-    def setup(self):
-        self.driver = self.get_driver()
-        self.driver.maximize_window()
-
-    def teardown(self):
-        self.driver.delete_all_cookies()
-        self.driver.quit()
-
-    @classmethod
-    def load_config(cls):
-        """
-        Load configuration
-
-        1) From ~/.ipa/ui_test.conf
-        2) From environmental variables
-        """
-
-        # load config file
-        path = os.path.join(os.path.expanduser("~"), ".ipa/ui_test.conf")
-        if not NO_YAML and os.path.isfile(path):
-            try:
-                with open(path, 'r') as conf:
-                    cls.config = yaml.load(conf)
-            except yaml.YAMLError as e:
-                raise unittest.SkipTest("Invalid Web UI config.\n%s" % e)
-            except IOError as e:
-                raise unittest.SkipTest(
-                    "Can't load Web UI test config: %s" % e
-                )
-        else:
-            cls.config = {}
-
-        c = cls.config
-
-        # override with environmental variables
-        for k, v in ENV_MAP.items():
-            val = os.environ.get(k)
-            if val is not None:
-                c[v] = val
-
-        # apply defaults
-        if 'port' not in c:
-            c['port'] = DEFAULT_PORT
-        if 'browser' not in c:
-            c['browser'] = DEFAULT_BROWSER
-        if 'type' not in c:
-            c['type'] = DEFAULT_TYPE
-
-    @classmethod
-    def get_driver(cls):
-        """
-        Get WebDriver according to configuration
-        """
-        browser = cls.config["browser"]
-        port = cls.config["port"]
-        driver_type = cls.config["type"]
-
-        options = None
-
-        if browser == 'chromium':
-            options = ChromeOptions()
-            options.binary_location = paths.CHROMIUM_BROWSER
-
-        if driver_type == 'remote':
-            if 'host' not in cls.config:
-                raise unittest.SkipTest('Selenium server host not configured')
-            host = cls.config["host"]
-
-            if browser == 'chrome':
-                capabilities = DesiredCapabilities.CHROME
-            elif browser == 'chromium':
-                capabilities = options.to_capabilities()
-            elif browser == 'ie':
-                capabilities = DesiredCapabilities.INTERNETEXPLORER
-            else:
-                capabilities = DesiredCapabilities.FIREFOX
-            try:
-                driver = webdriver.Remote(
-                    command_executor='http://%s:%d/wd/hub' % (host, port),
-                    desired_capabilities=capabilities)
-            except URLError as e:
-                raise unittest.SkipTest(
-                    'Error connecting to selenium server: %s' % e
-                )
-            except RuntimeError as e:
-                raise unittest.SkipTest(
-                    'Error while establishing webdriver: %s' % e
-                )
-        else:
-            try:
-                if browser == 'chrome' or browser == 'chromium':
-                    driver = webdriver.Chrome(chrome_options=options)
-                elif browser == 'ie':
-                    driver = webdriver.Ie()
-                else:
-                    fp = None
-                    if "ff_profile" in cls.config:
-                        fp = webdriver.FirefoxProfile(cls.config["ff_profile"])
-                    ff_log_path = cls.config.get("geckodriver_log_path")
-                    driver = webdriver.Firefox(fp, log_path=ff_log_path)
-            except URLError as e:
-                raise unittest.SkipTest(
-                    'Error connecting to selenium server: %s' % e
-                )
-            except RuntimeError as e:
-                raise unittest.SkipTest(
-                    'Error while establishing webdriver: %s' % e
-                )
-
-        return driver
 
     def find(self, expression, by='id', context=None, many=False, strict=False):
         """
@@ -2246,3 +2090,15 @@ class UI_driver:
             else:
                 assert value in checked_values, ('{} NOT checked while it '
                                                  'should be'.format(value))
+
+
+class UI_driver(UIUtils):
+    """
+    Base class for all UI integration tests
+    """
+
+    @pytest.fixture(autouse=True)
+    def compatibility(self, request, config, driver):
+        # TODO: Remove all self.config references
+        request.cls.config = config
+        request.cls.driver = driver

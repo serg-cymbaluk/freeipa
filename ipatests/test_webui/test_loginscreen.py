@@ -24,22 +24,20 @@ import pytest
 @pytest.mark.tier1
 class TestLoginScreen(UI_driver):
 
-    def setup(self, *args, **kwargs):
-        super(TestLoginScreen, self).setup(*args, **kwargs)
+    def setup(self):
         self.init_app()
         self.add_test_user()
         self.logout()
 
-    def teardown(self, *args, **kwargs):
+    def teardown(self):
         # log out first
-        if (self.logged_in()):
+        if self.logged_in():
             self.logout()
         else:
             self.load_url(self.get_base_url())
         # log in as administrator
         self.login()
         self.delete_test_user()
-        super(TestLoginScreen, self).teardown(*args, **kwargs)
 
     def delete_test_user(self):
         """

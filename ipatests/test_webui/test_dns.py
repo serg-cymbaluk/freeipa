@@ -35,9 +35,7 @@ import pytest
 @pytest.mark.tier1
 class test_dns(UI_driver):
 
-    def setup(self, *args, **kwargs):
-        super(test_dns, self).setup(*args, **kwargs)
-
+    def setup(self):
         if not self.has_dns():
             self.skip('DNS not configured')
 

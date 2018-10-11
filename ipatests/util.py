@@ -68,10 +68,13 @@ if six.PY3:
 PYTEST_VERSION = tuple(int(v) for v in pytest.__version__.split('.'))
 
 
-def check_ipaclient_unittests(reason="Skip in ipaclient unittest mode"):
+def check_ipaclient_unittests(config=None, reason="Skip in ipaclient unittest mode"):
     """Call this in a package to skip the package in ipaclient-unittest mode
     """
-    if pytest.config.getoption('ipaclient_unittests', False):
+
+    config = config or pytest.config
+
+    if config.getoption('ipaclient_unittests', False):
         if PYTEST_VERSION[0] >= 3:
             # pytest 3+ does no longer allow pytest.skip() on module level
             # pylint: disable=unexpected-keyword-arg
@@ -81,10 +84,13 @@ def check_ipaclient_unittests(reason="Skip in ipaclient unittest mode"):
             raise pytest.skip(reason)
 
 
-def check_no_ipaapi(reason="Skip tests that needs an IPA API"):
+def check_no_ipaapi(config=None, reason="Skip tests that needs an IPA API"):
     """Call this in a package to skip the package in no-ipaapi mode
     """
-    if pytest.config.getoption('skip_ipaapi', False):
+
+    config = config or pytest.config
+
+    if config.getoption('skip_ipaapi', False):
         if PYTEST_VERSION[0] >= 3:
             # pylint: disable=unexpected-keyword-arg
             raise pytest.skip.Exception(reason, allow_module_level=True)

@@ -103,9 +103,7 @@ def check_minimum_serial(self, serial, option):
 @pytest.mark.tier1
 class test_cert(UI_driver):
 
-    def setup(self, *args, **kwargs):
-        super(test_cert, self).setup(*args, **kwargs)
-
+    def setup(self):
         if not self.has_ca():
             self.skip('CA not configured')
 
