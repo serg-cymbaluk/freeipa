@@ -29,6 +29,7 @@ except ImportError:
 from ipaplatform.paths import paths
 from ipatests.test_webui.config import Config
 import ipatests.util
+from ipatests.test_webui.ui_driver import UIUtils
 
 DEFAULT_BROWSER = 'firefox'
 DEFAULT_PORT = 4444
@@ -173,6 +174,15 @@ def driver(config):
 
     driver.delete_all_cookies()
     driver.quit()
+
+
+@pytest.fixture()
+def ui(config, driver):
+    ui = UIUtils()
+    ui.config = config
+    ui.driver = driver
+
+    return ui
 
 
 def pytest_configure(config):
